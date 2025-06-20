@@ -1,0 +1,5 @@
+[OpenAI]
+OPEN_AI_KEY: sk-your-open-ai-key
+
+[AnthropicAPI]
+ANTHROPIC_API_KEY: your-cohere-api-key
