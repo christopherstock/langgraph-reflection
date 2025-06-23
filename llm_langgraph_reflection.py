@@ -12,8 +12,6 @@ os.environ["ANTHROPIC_API_KEY"] = ANTHROPIC_API_KEY
 os.environ["OPENAI_API_KEY"] = OPEN_AI_KEY
 print("set OpenAI & Anthropic API keys OK")
 
-exit(0)
-
 from langgraph_reflection import create_reflection_graph
 from langchain.chat_models import init_chat_model
 from langgraph.graph import StateGraph, MessagesState, START, END
@@ -25,7 +23,6 @@ def call_model(state):
     """Process the user query with a large language model."""
     model = init_chat_model(model="claude-3-7-sonnet-latest")
     return {"messages": model.invoke(state["messages"])}
-
 
 # Define a basic graph for the main assistant
 assistant_graph = (
@@ -79,7 +76,6 @@ def judge_response(state, config):
         print("⚠️ Judge requested improvements")
         return {"messages": [{"role": "user", "content": eval_result["comment"]}]}
 
-
 # Define the judge graph
 judge_graph = (
     StateGraph(MessagesState)
@@ -89,21 +85,20 @@ judge_graph = (
     .compile()
 )
 
-
 # Create the complete reflection graph
 reflection_app = create_reflection_graph(assistant_graph, judge_graph)
 reflection_app = reflection_app.compile()
-
 
 # Example query that might need improvement
 example_query = [
     {
         "role": "user",
-        "content": "Explain how nuclear fusion works and why it's important for clean energy",
+        # "content": "Explain how nuclear fusion works and why it's important for clean energy",
+        "content": "Explain how green energy works and why it's important for our planet",
     }
 ]
 
 # Process the query through the reflection system
-print("Running example with reflection...")
+print("Running reflection example ...")
 result = reflection_app.invoke({"messages": example_query})
 print("Result: ", result)
