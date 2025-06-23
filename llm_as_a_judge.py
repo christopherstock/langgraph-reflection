@@ -114,16 +114,15 @@ reflection_app = create_reflection_graph(assistant_graph, judge_graph)
 reflection_app = reflection_app.compile()
 
 
-# Example usage
-if __name__ == "__main__":
-    # Example query that might need improvement
-    example_query = [
-        {
-            "role": "user",
-            "content": "Explain how nuclear fusion works and why it's important for clean energy",
-        }
-    ]
+# Example query that might need improvement
+example_query = [
+    {
+        "role": "user",
+        "content": "Explain how nuclear fusion works and why it's important for clean energy",
+    }
+]
 
-    # Process the query through the reflection system
-    print("Running example with reflection...")
-    result = reflection_app.invoke({"messages": example_query})
+# Process the query through the reflection system
+print("Running example with reflection...")
+result = reflection_app.invoke({"messages": example_query})
+print("Result: ", result)
