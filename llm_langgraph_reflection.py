@@ -74,6 +74,7 @@ def judge_response(state, config):
     else:
         # Otherwise, return the judge's critique as a new user message
         print("⚠️ Judge requested improvements")
+        print("Eval Result: ", eval_result)
         return {"messages": [{"role": "user", "content": eval_result["comment"]}]}
 
 # Define the judge graph
@@ -94,7 +95,10 @@ example_query = [
     {
         "role": "user",
         # "content": "Explain how nuclear fusion works and why it's important for clean energy",
-        "content": "Explain how green energy works and why it's important for our planet",
+        # "content": "Explain how green energy works and why it's important for our planet",
+        # "content": "Explain why good is bad",
+        # "content": "Create a Python Hello World Program",
+        "content": "Do a noop",
     }
 ]
 
