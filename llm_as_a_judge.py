@@ -11,9 +11,22 @@ COLOR_OK = '\033[92m' # light green
 COLOR_DEFAULT = '\033[0m'
 
 import os
-print("set OpenAI key ", end='')
-os.environ["OPENAI_API_KEY"] = ".."
-os.environ["api_key"] = ".."
+COLOR_OK = '\033[92m' # light green
+COLOR_DEFAULT = '\033[0m'
+
+# read config
+print("importing config/config.ini ", end='')
+import configparser
+config = configparser.ConfigParser()
+config.read("config/config.ini")
+ANTHROPIC_API_KEY = config.get("AnthropicAPI", "ANTHROPIC_API_KEY")
+OPEN_AI_KEY = config.get("OpenAI", "OPEN_AI_KEY")
+print(COLOR_OK + "OK" + COLOR_DEFAULT)
+
+print("set OpenAI & Anthropic API keys ", end='')
+if "ANTHROPIC_API_KEY" not in os.environ:
+    os.environ["ANTHROPIC_API_KEY"] = ANTHROPIC_API_KEY
+    os.environ["OPENAI_API_KEY"] = OPEN_AI_KEY
 print(COLOR_OK + "OK" + COLOR_DEFAULT)
 
 from langgraph_reflection import create_reflection_graph
