@@ -18,6 +18,7 @@ print(COLOR_OK + "OK" + COLOR_DEFAULT)
 
 from langchain_anthropic import ChatAnthropic
 
+"""
 print("create anthropic chat instance ", end='')
 llm = ChatAnthropic(
     model="claude-3-5-sonnet-20240620",
@@ -28,3 +29,36 @@ llm = ChatAnthropic(
     # other params...
 )
 print(COLOR_OK + "OK" + COLOR_DEFAULT)
+
+messages = [
+    (
+        "system",
+        "You are a helpful assistant that translates English to French. Translate the user sentence.",
+    ),
+    ("human", "I love programming."),
+]
+ai_msg = llm.invoke(messages)
+
+print(ai_msg.content)
+"""
+
+"""
+from langchain.chat_models import init_chat_model
+model = init_chat_model("gemini-2.0-flash", model_provider="google_genai")
+model.invoke("Hello, world!")
+"""
+
+import anthropic
+
+client = anthropic.Anthropic(
+    # defaults to os.environ.get("ANTHROPIC_API_KEY")
+    api_key=ANTHROPIC_API_KEY,
+)
+message = client.messages.create(
+    model="claude-sonnet-4-20250514",
+    max_tokens=1024,
+    messages=[
+        {"role": "user", "content": "Hello, Claude"}
+    ]
+)
+print(message.content)
