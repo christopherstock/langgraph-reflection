@@ -1,5 +1,3 @@
-import os
-
 # read config
 import configparser
 config = configparser.ConfigParser()
@@ -7,6 +5,7 @@ config.read("config/config.ini")
 print("importing config/config.ini OK")
 
 # set API keys
+import os
 ANTHROPIC_API_KEY = config.get("AnthropicAPI", "ANTHROPIC_API_KEY")
 OPEN_AI_KEY = config.get("OpenAI", "OPEN_AI_KEY")
 os.environ["ANTHROPIC_API_KEY"] = ANTHROPIC_API_KEY
@@ -37,13 +36,10 @@ assistant_graph = (
     .compile()
 )
 
-
 # Define the tool that the judge can use to indicate the response is acceptable
 class Finish(TypedDict):
     """Tool for the judge to indicate the response is acceptable."""
-
     finish: bool
-
 
 # Define a more detailed critique prompt with specific evaluation criteria
 critique_prompt = """You are an expert judge evaluating AI responses. Your task is to critique the AI assistant's latest response in the conversation below.
@@ -64,7 +60,6 @@ Be detailed in your critique so the assistant can understand exactly how to impr
 <response>
 {outputs}
 </response>"""
-
 
 # Define the judge function with a more robust evaluation approach
 def judge_response(state, config):

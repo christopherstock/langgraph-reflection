@@ -1,8 +1,3 @@
-from langgraph.graph.state import CompiledStateGraph
-
-COLOR_OK = '\033[92m' # light green
-COLOR_DEFAULT = '\033[0m'
-
 import os
 COLOR_OK = '\033[92m' # light green
 COLOR_DEFAULT = '\033[0m'
@@ -17,76 +12,121 @@ OPEN_AI_KEY = config.get("OpenAI", "OPEN_AI_KEY")
 print(COLOR_OK + "OK" + COLOR_DEFAULT)
 
 print("set OpenAI & Anthropic API keys ", end='')
-if "ANTHROPIC_API_KEY" not in os.environ:
-    os.environ["ANTHROPIC_API_KEY"] = ANTHROPIC_API_KEY
-    os.environ["OPENAI_API_KEY"] = OPEN_AI_KEY
+os.environ["ANTHROPIC_API_KEY"] = ANTHROPIC_API_KEY
+os.environ["OPENAI_API_KEY"] = OPEN_AI_KEY
 print(COLOR_OK + "OK" + COLOR_DEFAULT)
 
-from langgraph_reflection import create_reflection_graph
-from langgraph_reflection import StateGraph
+"""Example of a LangGraph application with code reflection capabilities using Pyright.
+Should install:
+```
+pip install langgraph-reflection langchain openevals pyright
+```
+"""
+
+from typing import TypedDict
 from langchain.chat_models import init_chat_model
 from langgraph.graph import StateGraph, MessagesState, START, END
-from typing import TypedDict
-from openevals.llm import create_llm_as_judge
+from langgraph_reflection import create_reflection_graph
+from openevals.code.pyright import create_pyright_evaluator
 
-# Define the main assistant model that will generate responses
-def call_model(state):
-    """Process the user query with a large language model."""
+def call_model(state: dict) -> dict:
+    """Process the user query with a Claude 3 Sonnet model.
+    Args:
+        state: The current conversation state
+    Returns:
+        dict: Updated state with model response
+    """
     model = init_chat_model(model="claude-3-7-sonnet-latest")
     return {"messages": model.invoke(state["messages"])}
 
+# Define type classes for code extraction
+class ExtractPythonCode(TypedDict):
+    """Type class for extracting Python code. The python_code field is the code to be extracted."""
+    python_code: str
 
-# Define a basic graph for the main assistant
-assistant_graph = (
-    StateGraph(MessagesState)
-    .add_node(call_model)
-    .add_edge(START, "call_model")
-    .add_edge("call_model", END)
-    .compile()
-)
+class NoCode(TypedDict):
+    """Type class for indicating no code was found."""
+    no_code: bool
 
-from openevals.code.pyright import create_pyright_evaluator
+# System prompt for the model
+SYSTEM_PROMPT = """The below conversation is you conversing with a user to write some python code. Your final response is the last message in the list.
+Sometimes you will respond with code, othertimes with a question.
+If there is code - extract it into a single python script using ExtractPythonCode.
+If there is no code to extract - call NoCode."""
 
-# Function that validates code using Pyright
 def try_running(state: dict) -> dict | None:
-    """Attempt to run and analyze the extracted Python code."""
-    # Extract code from the conversation
-    # code = extract_python_code(state['messages'])
-    code = "print \"Hello World!\""
-    # code = ""
+    """Attempt to run and analyze the extracted Python code.
 
-    # Run Pyright analysis
+    Args:
+        state: The current conversation state
+
+    Returns:
+        dict | None: Updated state with analysis results if code was found
+    """
+    model = init_chat_model(model="o3-mini")
+    extraction = model.bind_tools([ExtractPythonCode, NoCode])
+    er = extraction.invoke(
+        [{"role": "system", "content": SYSTEM_PROMPT}] + state["messages"]
+    )
+    if len(er.tool_calls) == 0:
+        return None
+    tc = er.tool_calls[0]
+    if tc["name"] != "ExtractPythonCode":
+        return None
+
     evaluator = create_pyright_evaluator()
-    result = evaluator(outputs=code)
+    result = evaluator(outputs=tc["args"]["python_code"])
+    print(result)
 
-    if not result['score']:
-        # If errors found, return critique for the main agent
+    if not result["score"]:
         return {
-            "messages": [{
-                "role": "user",
-                "content": f"I ran pyright and found this: {result['comment']}\n\n"
-                          "Try to fix it..."
-            }]
+            "messages": [
+                {
+                    "role": "user",
+                    "content": f"I ran pyright and found this: {result['comment']}\n\n"
+                    "Try to fix it. Make sure to regenerate the entire code snippet. "
+                    "If you are not sure what is wrong, or think there is a mistake, "
+                    "you can ask me a question rather than generating code",
+                }
+            ]
         }
-    # No errors found - return None to indicate success
-    return None
 
-# Create graphs with reflection
-judge_graph = (StateGraph(MessagesState)
-    .add_node(try_running)
-    .add_edge(START, "try_running")
-    .add_edge("try_running", END)
-    .compile()
-)
 
-# Create reflection system that combines code generation and validation
-reflection_app = create_reflection_graph(assistant_graph, judge_graph).compile()
+def create_graphs():
+    """Create and configure the assistant and judge graphs."""
+    # Define the main assistant graph
+    assistant_graph = (
+        StateGraph(MessagesState)
+        .add_node(call_model)
+        .add_edge(START, "call_model")
+        .add_edge("call_model", END)
+        .compile()
+    )
 
+    # Define the judge graph for code analysis
+    judge_graph = (
+        StateGraph(MessagesState)
+        .add_node(try_running)
+        .add_edge(START, "try_running")
+        .add_edge("try_running", END)
+        .compile()
+    )
+
+    # Create the complete reflection graph
+    return create_reflection_graph(assistant_graph, judge_graph).compile()
+
+
+reflection_app = create_graphs()
+
+"""Run an example query through the reflection system."""
 example_query = [
     {
         "role": "user",
-        "content": "Please check the specified code with PyCheck",
+        "content": "Write a LangGraph RAG app",
+        # "content": "Write a Python Hello World app",
     }
 ]
+
+print("Running example with reflection...")
 result = reflection_app.invoke({"messages": example_query})
-print("Result: ", result)
+print("Result:", result)
