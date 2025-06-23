@@ -74,7 +74,7 @@ def judge_response(state, config):
     else:
         # Otherwise, return the judge's critique as a new user message
         print("⚠️ Judge requested improvements")
-        print("Eval Result: ", eval_result)
+        print("Rationale: ", eval_result.get('comment'))
         return {"messages": [{"role": "user", "content": eval_result["comment"]}]}
 
 # Define the judge graph
@@ -98,11 +98,13 @@ example_query = [
         # "content": "Explain how green energy works and why it's important for our planet",
         # "content": "Explain why good is bad",
         # "content": "Create a Python Hello World Program",
-        "content": "Do a noop",
+
+        # "content": "Do a noop", # 2 reflection cycles
+        "content": "Perform a noop", # 2 reflection cycles
     }
 ]
 
 # Process the query through the reflection system
 print("Running reflection example ...")
 result = reflection_app.invoke({"messages": example_query})
-print("Result: ", result)
+print("Result: ", result.get('messages'))
