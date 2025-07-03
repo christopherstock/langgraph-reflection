@@ -67,6 +67,7 @@ def judge_response(state, config):
         feedback_key="pass",
     )
     eval_result = evaluator(outputs=state["messages"][-1].content, inputs=None)
+    print("> Entire KI Response to Judge:", eval_result)
 
     if eval_result["score"]:
         print("✅ Response approved by judge")
@@ -95,12 +96,12 @@ example_query = [
     {
         "role": "user",
         # "content": "Explain how nuclear fusion works and why it's important for clean energy",
-        # "content": "Explain how green energy works and why it's important for our planet",
         # "content": "Explain why good is bad",
         # "content": "Create a Python Hello World Program",
-
         # "content": "Do a noop", # 2 reflection cycles
-        "content": "Perform a noop", # 2 reflection cycles
+
+        "content": "Explain how green energy works and why it's important for our planet",
+        # "content": "Perform a noop", # 2 reflection cycles
     }
 ]
 
@@ -108,3 +109,5 @@ example_query = [
 print("Running reflection example ...")
 result = reflection_app.invoke({"messages": example_query})
 print("Result: ", result.get('messages'))
+print(">> Original KI-Content: ", result.get('messages')[1])
+print("Original KI-Content: ", result.get('messages')[1].content)
