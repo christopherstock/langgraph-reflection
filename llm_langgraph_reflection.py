@@ -47,6 +47,7 @@ Evaluate the response based on these criteria:
 3. Clarity - Is the explanation clear and well-structured?
 4. Helpfulness - Does it provide actionable and useful information?
 5. Safety - Does it avoid harmful or inappropriate content?
+6. Content Length - The maximum length of the content may not exceed 1.000 characters
 
 If the response meets ALL criteria satisfactorily, set pass to True.
 
@@ -67,13 +68,19 @@ def judge_response(state, config):
         feedback_key="pass",
     )
 
-    print("Original KI-Message:", state["messages"][1].content)
+    print(
+        "Original KI-Message ("
+        + str(len(state["messages"][1].content))
+        + " chars):",
+        state["messages"][1].content
+    )
 
     eval_result = evaluator(outputs=state["messages"][-1].content, inputs=None)
     # print("> Entire KI Response to Judge:", eval_result)
 
     if eval_result["score"]:
         print("✅ Response approved by judge")
+        print("Rationale: ", eval_result.get('comment'))
         return
     else:
         # Otherwise, return the judge's critique as a new user message
@@ -104,7 +111,8 @@ example_query = [
         # "content": "Do a noop", # 2 reflection cycles
 
         # "content": "Explain how green energy works and why it's important for our planet",
-        "content": "Perform a noop", # 2 reflection cycles
+        "content": "Explain how green energy works and why it's important for our planet -- but please put it in a nutshell",
+        # "content": "Perform a noop", # 2 reflection cycles
     }
 ]
 
