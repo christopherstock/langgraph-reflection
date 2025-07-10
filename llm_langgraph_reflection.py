@@ -108,11 +108,12 @@ example_query = [
         # "content": "Explain how nuclear fusion works and why it's important for clean energy",
         # "content": "Explain why good is bad",
         # "content": "Create a Python Hello World Program",
-        # "content": "Do a noop", # 2 reflection cycles
+        # "content": "Do a noop", # 2 reflection cycles,
+        # "content": "Perform a noop", # 2 reflection cycles,
 
-        # "content": "Explain how green energy works and why it's important for our planet",
-        "content": "Explain how green energy works and why it's important for our planet -- but please put it in a nutshell",
-        # "content": "Perform a noop", # 2 reflection cycles
+        "content": "Explain how green energy works and why it's important for our planet",
+
+        # "content": "Explain how green energy works and why it's important for our planet -- but please put it in a nutshell",
     }
 ]
 
