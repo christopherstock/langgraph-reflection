@@ -68,24 +68,23 @@ def judge_response(state, config):
         feedback_key="pass",
     )
 
-    print(
-        "Original KI-Message ("
-        + str(len(state["messages"][1].content))
-        + " chars):",
-        state["messages"][1].content
-    )
-
+    print()
+    print("-------------------------")
+    print("State:", state)
+    print()
     eval_result = evaluator(outputs=state["messages"][-1].content, inputs=None)
-    # print("> Entire KI Response to Judge:", eval_result)
+    print("eval_result:", eval_result)
 
     if eval_result["score"]:
         print("✅ Response approved by judge")
         print("Rationale: ", eval_result.get('comment'))
+        print("-------------------------")
         return
     else:
         # Otherwise, return the judge's critique as a new user message
         print("⚠️ Judge requested improvements")
         print("Rationale: ", eval_result.get('comment'))
+        print("-------------------------")
         return {"messages": [{"role": "user", "content": eval_result["comment"]}]}
 
 # Define the judge graph
@@ -110,16 +109,16 @@ example_query = [
         # "content": "Create a Python Hello World Program",
         # "content": "Do a noop", # 2 reflection cycles,
         # "content": "Perform a noop", # 2 reflection cycles,
-
-        "content": "Explain how green energy works and why it's important for our planet",
-
         # "content": "Explain how green energy works and why it's important for our planet -- but please put it in a nutshell",
+
+        "content": "Explain how green energy works and why it's important for our planet.",
     }
 ]
 
 # Process the query through the reflection system
 print("Running reflection example ...")
 result = reflection_app.invoke({"messages": example_query})
-print("Result: ", result.get('messages'))
-# print(">> Original KI-Content: ", result.get('messages')[1])
-# print("Original KI-Content: ", result.get('messages')[1].content)
+
+print()
+print("-------------------------")
+print("Result: ", result)
