@@ -1,6 +1,10 @@
 # read config
 import configparser
 
+from langchain_community.llms.openai import OpenAI
+from langchain_community.output_parsers import rail_parser
+from langchain_core.prompts import PromptTemplate
+
 config = configparser.ConfigParser()
 config.read("config/config.ini")
 print("importing config/config.ini OK")
@@ -14,25 +18,27 @@ os.environ["ANTHROPIC_API_KEY"] = ANTHROPIC_API_KEY
 os.environ["OPENAI_API_KEY"] = OPEN_AI_KEY
 print("set OpenAI & Anthropic API keys OK")
 
-# Import LangChain and Reflection-related modules
-from langchain.prompts import PromptTemplate
-from langchain.llms import OpenAI
-from langchain.output_parsers import ReflectionParser
+# Reflection demonstration starts here
+# Step 1: Instantiate LLM
+llm = OpenAI(model="gpt-4", api_key=os.environ["OPENAI_API_KEY"])
 
-# Function to demonstrate Reflection in LangChain
-def demonstrate_reflection():
-    llm = OpenAI()
-    prompt = PromptTemplate(
-        input_variables=["example"],
-        template="Reflect on the following statement and provide insight: {example}"
-    )
-    reflection_parser = ReflectionParser()
-    example = "Hard work is the key to success."
-    reflection_output = llm(prompt.format(example=example))
-    insight = reflection_parser.parse(reflection_output)
-    print("Reflection Output:", insight)
+# Step 2: Create a simple reflection prompt template
+prompt = PromptTemplate(template="Reflect on the following text: '{input_text}'")
 
+# Step 3: Define input and render prompt
+input_text = "The code simplifies complex tasks by abstracting functionality."
+rendered_prompt = prompt.format(input_text=input_text)
 
-# Run demonstration
-if __name__ == "__main__":
-    demonstrate_reflection()
+# Step 4: Send request to LLM
+response = llm.generate([rendered_prompt])
+
+# Step 5: Parse response
+parser = rail_parser.GuardrailsOutputParser.from_rail_string(
+    rail_str="<rail><output format='text'></output></rail>", api=llm
+)
+parsed_output = parser.parse(response.responses[0].text)
+
+# Print results
+print(f"Prompt: {rendered_prompt}")
+print(f"Response: {response.responses[0].text}")
+print(f"Parsed Output: {parsed_output}")
