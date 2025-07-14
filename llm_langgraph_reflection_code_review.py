@@ -50,19 +50,15 @@ def call_model(state: dict) -> dict:
     model = init_chat_model(model="gpt-4o-mini", openai_api_key = OPEN_AI_KEY)
     return {"messages": model.invoke(state["messages"])}
 
-# Define type classes for code extraction
 class ExtractPythonCode(TypedDict):
-    """Type class for extracting Python code. The python_code field is the code to be extracted."""
     python_code: str
 
 class NoCode(TypedDict):
-    """Type class for indicating no code was found."""
     no_code: bool
 
-# Evaluation prompt for the model
 EVALUATION_PROMPT = """The below conversation is you conversing with a user to write some python code. Your final response is the last message in the list.
 
-Sometimes you will respond with code, othertimes with a question.
+Sometimes you will respond with code, otherwise with a question.
 
 If there is code - extract it into a single python script using ExtractPythonCode.
 
@@ -110,7 +106,6 @@ def try_running(state: dict) -> dict | None:
         print("✅️ Pyright approved the code:")
         print(code)
 
-# Define the main assistant graph
 assistant_graph = (
     StateGraph(MessagesState)
     .add_node(call_model)
@@ -119,7 +114,6 @@ assistant_graph = (
     .compile()
 )
 
-# Define the judge graph for code analysis
 judge_graph = (
     StateGraph(MessagesState)
     .add_node(try_running)
