@@ -12,25 +12,13 @@ os.environ["ANTHROPIC_API_KEY"] = ANTHROPIC_API_KEY
 os.environ["OPENAI_API_KEY"] = OPEN_AI_KEY
 print("set OpenAI & Anthropic API keys OK")
 
-from typing import TypedDict, Annotated, Literal
-import json
-import os
-import subprocess
-import tempfile
-
+from typing import TypedDict
 from langchain.chat_models import init_chat_model
 from langgraph.graph import StateGraph, MessagesState, START, END
 from langgraph_reflection import create_reflection_graph
+import json, os, subprocess, tempfile
 
 def analyze_with_pyright(code_string: str) -> dict:
-    """Analyze Python code using Pyright for static type checking and errors.
-
-    Args:
-        code_string: The Python code to analyze as a string
-
-    Returns:
-        dict: The Pyright analysis results
-    """
     with tempfile.NamedTemporaryFile(suffix=".py", mode="w", delete=False) as temp:
         temp.write(code_string)
         temp_path = temp.name
@@ -59,14 +47,6 @@ def analyze_with_pyright(code_string: str) -> dict:
         os.unlink(temp_path)
 
 def call_model(state: dict) -> dict:
-    """Process the user query with the GPT-4o mini model.
-
-    Args:
-        state: The current conversation state
-
-    Returns:
-        dict: Updated state with the model response
-    """
     model = init_chat_model(model="gpt-4o-mini", openai_api_key = OPEN_AI_KEY)
     return {"messages": model.invoke(state["messages"])}
 
@@ -79,8 +59,8 @@ class NoCode(TypedDict):
     """Type class for indicating no code was found."""
     no_code: bool
 
-# System prompt for the model
-SYSTEM_PROMPT = """The below conversation is you conversing with a user to write some python code. Your final response is the last message in the list.
+# Evaluation prompt for the model
+EVALUATION_PROMPT = """The below conversation is you conversing with a user to write some python code. Your final response is the last message in the list.
 
 Sometimes you will respond with code, othertimes with a question.
 
@@ -100,7 +80,7 @@ def try_running(state: dict) -> dict | None:
     model = init_chat_model(model="gpt-4o-mini")
     extraction = model.bind_tools([ExtractPythonCode, NoCode])
     er = extraction.invoke(
-        [{"role": "system", "content": SYSTEM_PROMPT}] + state["messages"]
+        [{"role": "system", "content": EVALUATION_PROMPT}] + state["messages"]
     )
     if len(er.tool_calls) == 0:
         return None
