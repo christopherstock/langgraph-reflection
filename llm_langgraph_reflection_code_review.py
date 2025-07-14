@@ -70,7 +70,8 @@ If there is no code to extract - call NoCode."""
 
 def try_running(state: dict) -> dict | None:
     print()
-    print("AI Message: ", state["messages"][-1].content)
+    print("ℹ️ AI Message from LLM: ")
+    print(state["messages"][-1].content)
 
     model = init_chat_model(model="gpt-4o-mini")
     extraction = model.bind_tools([ExtractPythonCode, NoCode])
@@ -83,13 +84,15 @@ def try_running(state: dict) -> dict | None:
     if tc["name"] != "ExtractPythonCode":
         return None
 
-    result = analyze_with_pyright(tc["args"]["python_code"])
+    code = tc["args"]["python_code"]
+    scan_result = analyze_with_pyright(code)
 
-    explanation = result["generalDiagnostics"]
+    explanation = scan_result["generalDiagnostics"]
 
-    if result["summary"]["errorCount"]:
+    if scan_result["summary"]["errorCount"]:
         print()
-        print("⚠️ Pyright Scan yielded issues: ", result)
+        print("⚠️ Pyright scan found violations:")
+        print(scan_result)
 
         return {
             "messages": [
@@ -102,6 +105,10 @@ def try_running(state: dict) -> dict | None:
                 }
             ]
         }
+    else:
+        print()
+        print("✅️ Pyright approved the code:")
+        print(code)
 
 # Define the main assistant graph
 assistant_graph = (
@@ -133,5 +140,6 @@ if __name__ == "__main__":
 
     print("running example with reflection using GPT-4o mini ...")
     result = reflection_app.invoke({"messages": example_query})
+
     print()
-    print("✅ Result accepted", result)
+    print("✅ Result accepted")
