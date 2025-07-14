@@ -69,6 +69,14 @@ If there is code - extract it into a single python script using ExtractPythonCod
 If there is no code to extract - call NoCode."""
 
 def try_running(state: dict) -> dict | None:
+    """Attempt to run and analyze the extracted Python code.
+
+    Args:
+        state: The current conversation state
+
+    Returns:
+        dict | None: Updated state with analysis results if code was found
+    """
     model = init_chat_model(model="gpt-4o-mini")
     extraction = model.bind_tools([ExtractPythonCode, NoCode])
     er = extraction.invoke(
@@ -83,7 +91,7 @@ def try_running(state: dict) -> dict | None:
     result = analyze_with_pyright(tc["args"]["python_code"])
 
     print()
-    print("⚠️ Scan Result: ", result)
+    print("Scan Result: ", result)
 
     explanation = result["generalDiagnostics"]
 
@@ -100,27 +108,33 @@ def try_running(state: dict) -> dict | None:
             ]
         }
 
-# Define the main assistant graph
-assistant_graph = (
-    StateGraph(MessagesState)
-    .add_node(call_model)
-    .add_edge(START, "call_model")
-    .add_edge("call_model", END)
-    .compile()
-)
+def create_graphs():
+    """Create and configure the assistant and judge graphs."""
+    # Define the main assistant graph
+    assistant_graph = (
+        StateGraph(MessagesState)
+        .add_node(call_model)
+        .add_edge(START, "call_model")
+        .add_edge("call_model", END)
+        .compile()
+    )
 
-# Define the judge graph for code analysis
-judge_graph = (
-    StateGraph(MessagesState)
-    .add_node(try_running)
-    .add_edge(START, "try_running")
-    .add_edge("try_running", END)
-    .compile()
-)
+    # Define the judge graph for code analysis
+    judge_graph = (
+        StateGraph(MessagesState)
+        .add_node(try_running)
+        .add_edge(START, "try_running")
+        .add_edge("try_running", END)
+        .compile()
+    )
 
-reflection_app = create_reflection_graph(assistant_graph, judge_graph).compile()
+    # Create the complete reflection graph
+    return create_reflection_graph(assistant_graph, judge_graph).compile()
+
+reflection_app = create_graphs()
 
 if __name__ == "__main__":
+    """Run an example query through the reflection system."""
     example_query = [
         {
             "role": "user",
@@ -128,7 +142,7 @@ if __name__ == "__main__":
         }
     ]
 
-    print("running example with reflection using GPT-4o mini ...")
+    print("Running example with reflection using GPT-4o mini...")
     result = reflection_app.invoke({"messages": example_query})
     print()
-    print("✅ Accepted Result:", result)
+    print("Final Result:", result)
