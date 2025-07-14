@@ -109,7 +109,10 @@ def try_running(state: dict) -> dict | None:
         return None
 
     result = analyze_with_pyright(tc["args"]["python_code"])
-    print(result)
+
+    print()
+    print("Scan Result: ", result)
+
     explanation = result["generalDiagnostics"]
 
     if result["summary"]["errorCount"]:
@@ -161,4 +164,5 @@ if __name__ == "__main__":
 
     print("Running example with reflection using GPT-4o mini...")
     result = reflection_app.invoke({"messages": example_query})
-    print("Result:", result)
+    print()
+    print("Final Result:", result)
