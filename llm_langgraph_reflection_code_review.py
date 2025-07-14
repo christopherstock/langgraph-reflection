@@ -69,6 +69,9 @@ If there is code - extract it into a single python script using ExtractPythonCod
 If there is no code to extract - call NoCode."""
 
 def try_running(state: dict) -> dict | None:
+    print()
+    print("AI Message: ", state["messages"][-1].content)
+
     model = init_chat_model(model="gpt-4o-mini")
     extraction = model.bind_tools([ExtractPythonCode, NoCode])
     er = extraction.invoke(
@@ -82,12 +85,12 @@ def try_running(state: dict) -> dict | None:
 
     result = analyze_with_pyright(tc["args"]["python_code"])
 
-    print()
-    print("⚠️ Scan Result: ", result)
-
     explanation = result["generalDiagnostics"]
 
     if result["summary"]["errorCount"]:
+        print()
+        print("⚠️ Pyright Scan yielded issues: ", result)
+
         return {
             "messages": [
                 {
@@ -131,4 +134,4 @@ if __name__ == "__main__":
     print("running example with reflection using GPT-4o mini ...")
     result = reflection_app.invoke({"messages": example_query})
     print()
-    print("✅ Accepted Result:", result)
+    print("✅ Result accepted", result)
