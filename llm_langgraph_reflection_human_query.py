@@ -100,11 +100,6 @@ def judge_response(state: dict) -> dict | None:
     eval_result = evaluator(outputs=state["messages"][-1].content, inputs=None)
     print("ℹ️ Evaluation Result:", eval_result)
 
-    exit(0)
-
-
-
-
     if eval_result["score"]:
         print("✅ Response approved by judge")
         print("Rationale: ", eval_result.get('comment'))
@@ -116,13 +111,6 @@ def judge_response(state: dict) -> dict | None:
         print("Rationale: ", eval_result.get('comment'))
         print("-------------------------")
         return {"messages": [{"role": "user", "content": eval_result["comment"]}]}
-
-
-
-
-
-    exit(0)
-
 
     model = init_chat_model(model="gpt-4o-mini")
     extraction = model.bind_tools([ExtractPythonCode, NoCode])
