@@ -13,49 +13,13 @@ os.environ["ANTHROPIC_API_KEY"] = ANTHROPIC_API_KEY
 os.environ["OPENAI_API_KEY"] = OPEN_AI_KEY
 print("set OpenAI & Anthropic API keys OK")
 
-from typing import TypedDict
 from langchain.chat_models import init_chat_model
 from langgraph.graph import StateGraph, MessagesState, START, END
 from langgraph_reflection import create_reflection_graph
-import json, os, subprocess, tempfile
-
-def analyze_with_pyright(code_string: str) -> dict:
-    with tempfile.NamedTemporaryFile(suffix=".py", mode="w", delete=False) as temp:
-        temp.write(code_string)
-        temp_path = temp.name
-
-    try:
-        result = subprocess.run(
-            [
-                "pyright",
-                "--outputjson",
-                "--level",
-                "error",  # Only report errors, not warnings
-                temp_path,
-            ],
-            capture_output=True,
-            text=True,
-        )
-
-        try:
-            return json.loads(result.stdout)
-        except json.JSONDecodeError:
-            return {
-                "error": "Failed to parse Pyright output",
-                "raw_output": result.stdout,
-            }
-    finally:
-        os.unlink(temp_path)
 
 def call_model(state: dict) -> dict:
     model = init_chat_model(model="gpt-4o-mini", openai_api_key = OPEN_AI_KEY)
     return {"messages": model.invoke(state["messages"])}
-
-class ExtractPythonCode(TypedDict):
-    python_code: str
-
-class NoCode(TypedDict):
-    no_code: bool
 
 EVALUATION_PROMPT = """You are an expert judge evaluating AI responses. Your task is to critique the AI assistant's latest response in the conversation below.
 
@@ -86,10 +50,6 @@ def judge_response(state: dict) -> dict | None:
     print("ℹ️ Entire State Object: ")
     print(state)
 
-
-
-
-
     evaluator = create_llm_as_judge(
         prompt=EVALUATION_PROMPT,
         model="openai:o3-mini",
@@ -104,53 +64,19 @@ def judge_response(state: dict) -> dict | None:
         print("✅ Response approved by judge")
         print("Rationale: ", eval_result.get('comment'))
         print("-------------------------")
-        return
+        return None
     else:
         # Otherwise, return the judge's critique as a new user message
         print("⚠️ Judge requested improvements")
         print("Rationale: ", eval_result.get('comment'))
         print("-------------------------")
-        return {"messages": [{"role": "user", "content": eval_result["comment"]}]}
-
-    model = init_chat_model(model="gpt-4o-mini")
-    extraction = model.bind_tools([ExtractPythonCode, NoCode])
-    er = extraction.invoke(
-        [{"role": "system", "content": EVALUATION_PROMPT}] + state["messages"]
-    )
-    if len(er.tool_calls) == 0:
-        print("Check 1")
-        return None
-    tc = er.tool_calls[0]
-    if tc["name"] != "ExtractPythonCode":
-        print("Check 2")
-        return None
-
-    code = tc["args"]["python_code"]
-    scan_result = analyze_with_pyright(code)
-
-    explanation = scan_result["generalDiagnostics"]
-
-    if scan_result["summary"]["errorCount"]:
-        print("Check 3")
-        print()
-        print("⚠️ Pyright scan found violations:")
-        print(scan_result)
 
         return {
-            "messages": [
-                {
-                    "role": "user",
-                    "content": f"I ran pyright and found this: {explanation}\n\n"
-                               "Try to fix it. Make sure to regenerate the entire code snippet. "
-                               "If you are not sure what is wrong, or think there is a mistake, "
-                               "you can ask me a question rather than generating code",
-                }
-            ]
+            "messages": [{
+                "role": "user",
+                "content": eval_result["comment"]
+            }]
         }
-    else:
-        print()
-        print("✅️ Pyright approved the code:")
-        print(code)
 
 assistant_graph = (
     StateGraph(MessagesState)
