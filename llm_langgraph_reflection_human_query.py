@@ -1,7 +1,5 @@
 import configparser
 
-from openevals import create_llm_as_judge
-
 config = configparser.ConfigParser()
 config.read("config/config.ini")
 print("importing config/config.ini OK")
@@ -16,6 +14,7 @@ print("set OpenAI & Anthropic API keys OK")
 from langchain.chat_models import init_chat_model
 from langgraph.graph import StateGraph, MessagesState, START, END
 from langgraph_reflection import create_reflection_graph
+from openevals import create_llm_as_judge
 
 def call_model(state: dict) -> dict:
     model = init_chat_model(model="gpt-4o-mini", openai_api_key = OPEN_AI_KEY)
@@ -107,5 +106,5 @@ if __name__ == "__main__":
     print("running example with reflection using GPT-4o mini ...")
     result = reflection_app.invoke({"messages": example_query})
 
-    print()
-    print("✅ Result accepted")
+    # print()
+    # print("✅ Result accepted")
