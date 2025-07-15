@@ -1,4 +1,7 @@
 import configparser
+
+from openevals import create_llm_as_judge
+
 config = configparser.ConfigParser()
 config.read("config/config.ini")
 print("importing config/config.ini OK")
@@ -74,7 +77,7 @@ Be detailed in your critique so the assistant can understand exactly how to impr
 {outputs}
 </response>"""
 
-def try_running(state: dict) -> dict | None:
+def judge_response(state: dict) -> dict | None:
     print()
     print("ℹ️ AI Message from LLM: ")
     print(state["messages"][-1].content)
@@ -82,6 +85,40 @@ def try_running(state: dict) -> dict | None:
     print()
     print("ℹ️ Entire State Object: ")
     print(state)
+
+
+
+
+
+    evaluator = create_llm_as_judge(
+        prompt=EVALUATION_PROMPT,
+        model="openai:o3-mini",
+        feedback_key="pass",
+    )
+
+    print()
+    eval_result = evaluator(outputs=state["messages"][-1].content, inputs=None)
+    print("ℹ️ Evaluation Result:", eval_result)
+
+    exit(0)
+
+
+
+
+    if eval_result["score"]:
+        print("✅ Response approved by judge")
+        print("Rationale: ", eval_result.get('comment'))
+        print("-------------------------")
+        return
+    else:
+        # Otherwise, return the judge's critique as a new user message
+        print("⚠️ Judge requested improvements")
+        print("Rationale: ", eval_result.get('comment'))
+        print("-------------------------")
+        return {"messages": [{"role": "user", "content": eval_result["comment"]}]}
+
+
+
 
 
     exit(0)
@@ -137,9 +174,9 @@ assistant_graph = (
 
 judge_graph = (
     StateGraph(MessagesState)
-    .add_node(try_running)
-    .add_edge(START, "try_running")
-    .add_edge("try_running", END)
+    .add_node(judge_response)
+    .add_edge(START, "judge_response")
+    .add_edge("judge_response", END)
     .compile()
 )
 
