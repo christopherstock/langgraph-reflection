@@ -79,15 +79,25 @@ def try_running(state: dict) -> dict | None:
     print("ℹ️ AI Message from LLM: ")
     print(state["messages"][-1].content)
 
+    print()
+    print("ℹ️ Entire State Object: ")
+    print(state)
+
+
+    exit(0)
+
+
     model = init_chat_model(model="gpt-4o-mini")
     extraction = model.bind_tools([ExtractPythonCode, NoCode])
     er = extraction.invoke(
         [{"role": "system", "content": EVALUATION_PROMPT}] + state["messages"]
     )
     if len(er.tool_calls) == 0:
+        print("Check 1")
         return None
     tc = er.tool_calls[0]
     if tc["name"] != "ExtractPythonCode":
+        print("Check 2")
         return None
 
     code = tc["args"]["python_code"]
@@ -96,6 +106,7 @@ def try_running(state: dict) -> dict | None:
     explanation = scan_result["generalDiagnostics"]
 
     if scan_result["summary"]["errorCount"]:
+        print("Check 3")
         print()
         print("⚠️ Pyright scan found violations:")
         print(scan_result)
